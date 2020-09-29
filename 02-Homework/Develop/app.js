@@ -10,6 +10,98 @@ const outputPath = path.join(OUTPUT_DIR, "team.html");
 
 const render = require("./lib/htmlRenderer");
 
+String.prototype.capitalize = () => {
+    return this.charAt(0).toUpperCase() + this.slice(1);
+}
+
+const getEmployees = async (employees = []) => {
+    const questionTemplte = 'What is the employee\'s'
+    const generalPrompt = [
+        {
+            name: 'name',
+            type: 'input',
+            message: `${questionTemplte} name`
+        },
+        {
+            name: 'id',
+            type: 'input',
+            message: `${questionTemplte} id`
+        },
+        {
+            name: 'email',
+            type: 'input',
+            message: `${questionTemplte} email`
+        },
+        {
+            name: 'role',
+            type: 'list',
+            message: `${questionTemplte} role`,
+            choices: [
+                'Intern',
+                'Engineer',
+                'Manager'
+            ]
+        }
+    ]
+
+    const { ...response } = await inquirer.prompt(generalPrompt);
+
+
+    const confirmPrompt = {
+        name: 'confirm',
+        type: 'confirm',
+        message: 'Do you want to keep adding employees?'
+    };
+
+    const rolePrompt = {
+        name: 'roleInfo',
+        type: 'input',
+    }
+    
+    if(response.role === 'Intern') {
+        rolePrompt.message = `${questionTemplte} school`
+    }
+    if(response.role === 'Engineer') {
+        rolePrompt.message = `${questionTemplte} GitHub`
+    }
+    if(response.role === 'Manager') {
+        rolePrompt.message = `${questionTemplte} office`
+    }
+
+    const { confirm, ...roleResponse } = await inquirer.prompt([rolePrompt, confirmPrompt]);
+
+    if(response.role === 'Intern') {
+        employee = new Intern(response.name, response.id, response.email, roleResponse.roleInfo)
+    }
+    if(response.role === 'Engineer') {
+        employee = new Engineer(response.name, response.id, response.email, roleResponse.roleInfo)
+    }
+    if(response.role === 'Manager') {
+        employee = new Manager(response.name, response.id, response.email, roleResponse.roleInfo)
+    }
+    const newEmployees = [...employees, employee]
+    return confirm ? getEmployees(newEmployees) : newEmployees;
+};
+
+const main = async () => {
+
+    const employees = await getEmployees();
+    fs.writeFile(outputPath, render(employees), (err) => {
+        try{
+            if(err) {
+                throw err
+            }
+            console.log('saved')
+        }
+        catch(err){
+            console.warn(err)d
+        }
+    })
+}
+
+main();
+
+
 
 // Write code to use inquirer to gather information about the development team members,
 // and to create objects for each team member (using the correct classes as blueprints!)
